@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 short int max;
 
@@ -70,15 +71,15 @@ int main() {
 	short int size = fsize / 4;
 	data_im = (short int*) malloc(size*sizeof(short int));
 	data_re = (short int*) malloc(size*sizeof(short int));
-	short int re_Array[size];
-	short int im_Array[size];
-	//go in steps of 4 bytes and split the data into real and imaginery numbers, each with a size of 2 bytes
+	float re_Array[size];
+	float im_Array[size];
+	//go in steps of 2 bytes and split the data into real and imaginery numbers, each with a size of 2 bytes
 	int i;
 	for (i=0; i<size; i++)
 	{
-		fread(&re_Array[i], 2, 1, f);
+		fread(&data_re[i], 2, 1, f);
 		fseek(f, 2, SEEK_CUR);
-		fread(&im_Array[i], 2, 1, f);
+		fread(&data_im[i], 2, 1, f);
 		fseek(f, 2, SEEK_CUR);
 		
 	}
@@ -90,14 +91,29 @@ int main() {
 
 	}
 	fclose(f);*/
-	findMaximum(re_Array, im_Array, size);
+	findMaximum(data_re, data_im, size);
 
-	for(i=0; i<size; i++)
+	for(int i=0; i<size; i++)
 	{
-		re_Array[i] = re_Array[i]/max;
-		im_Array[i] = im_Array[i]/max;
+		re_Array[i] = ((float)data_re[i])/max;
+		im_Array[i] = ((float)data_im[i])/max;
 	}
+
 	
+	i = 0;
+	/*for (i=0; i<100; i++)
+	{
+		printf("%f\n", re_Array[i]);
+		printf("%f\n", im_Array[i]);
+
+	}
+	fclose(f);*/
+
+	/*for (int i=0; i<size; i++)
+	{
+		re_Array[i] = re_Array[i] * exp();
+		re_Array[i] = re_Array[i] * exp();
+	}*/
 
 
 	return 0;
