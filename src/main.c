@@ -45,18 +45,6 @@ void findMaximum(short int arr1[], short int arr2[], int N)
 
 int main() {
 	// 1. first read in the file from the data folder
-	/*
-	FILE *f = fopen("data/30720KSPS_dl_signal.sigmf-data", "rb");
-	fseek(f, 0, SEEK_END);
-	long fsize = ftell(f);
-	fseek(f, 0, SEEK_SET);  /* same as rewind(f);
-
-	char *string = malloc(fsize + 1);
-	fread(string, fsize, 1, f);
-	fclose(f);
-
-	string[fsize] = 0;
-	*/
 	//1. define pointers to read in data
 	short int *data_im;
 	short int *data_re;
@@ -73,6 +61,19 @@ int main() {
 	data_re = (short int*) malloc(size*sizeof(short int));
 	float re_Array[size];
 	float im_Array[size];
+
+	//refWaveform
+	FILE *fp = fopen("refWaveform", "r");
+	fseek(fp, 0, SEEK_END);
+	long fpsize = ftell(fp);
+	fseek(fp, 0, SEEK_SET); 
+	printf("fpsize is %ld", fpsize);
+	printf("\n");
+
+	short int ref_size = fpsize / 4;
+	float ref_re_Array[ref_size];
+	float ref_im_Array[ref_size];
+
 	//go in steps of 2 bytes and split the data into real and imaginery numbers, each with a size of 2 bytes
 	int i;
 	for (i=0; i<size; i++)
@@ -83,14 +84,16 @@ int main() {
 		fseek(f, 2, SEEK_CUR);
 		
 	}
-	/*i = 0;
-	for (i=0; i<100; i++)
-	{
-		printf("%hu\n", re_Array[i]);
-		printf("%hu\n", im_Array[i]);
 
+	for (i=0; i<ref_size; i++)
+	{
+		fread(&ref_re_Array[i], 2, 1, f);
+		fseek(fp, 2, SEEK_CUR);
+		fread(&ref_im_Array[i], 2, 1, f);
+		fseek(fp, 2, SEEK_CUR);
+		
 	}
-	fclose(f);*/
+
 	findMaximum(data_re, data_im, size);
 
 	for(int i=0; i<size; i++)
@@ -99,12 +102,13 @@ int main() {
 		im_Array[i] = ((float)data_im[i])/max;
 	}
 
+
 	
-	i = 0;
-	/*for (i=0; i<100; i++)
+	/*i = 0;
+	for (i=0; i<10; i++)
 	{
-		printf("%f\n", re_Array[i]);
-		printf("%f\n", im_Array[i]);
+		printf("ref_re_Array %f\n", ref_re_Array[i]);
+		printf("ref_im_Array %f\n", ref_im_Array[i]);
 
 	}
 	fclose(f);*/
