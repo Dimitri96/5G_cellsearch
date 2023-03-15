@@ -48,6 +48,8 @@ int main() {
 	//1. define pointers to read in data
 	short int *data_im;
 	short int *data_re;
+	float *ref_data_im;
+	float *ref_data_re;
 	//short int **data_im_start = &data_im;
 	//short int **data_re_start = &data_re;
 	//2. allocate memory for the data to read in
@@ -61,18 +63,16 @@ int main() {
 	data_re = (short int*) malloc(size*sizeof(short int));
 	float re_Array[size];
 	float im_Array[size];
-
-	//refWaveform
+	
 	FILE *fp = fopen("refWaveform", "r");
 	fseek(fp, 0, SEEK_END);
 	long fpsize = ftell(fp);
 	fseek(fp, 0, SEEK_SET); 
-	printf("fpsize is %ld", fpsize);
-	printf("\n");
 
-	short int ref_size = fpsize / 4;
-	float ref_re_Array[ref_size];
-	float ref_im_Array[ref_size];
+	short int sz = fpsize / 4;
+	ref_data_im = (float*) malloc(sz*sizeof(float));
+	ref_data_re = (float*) malloc(sz*sizeof(float));
+
 
 	//go in steps of 2 bytes and split the data into real and imaginery numbers, each with a size of 2 bytes
 	int i;
@@ -85,14 +85,15 @@ int main() {
 		
 	}
 
-	for (i=0; i<ref_size; i++)
+	for (i=0; i<sz; i++)
 	{
-		fread(&ref_re_Array[i], 2, 1, f);
+		fread(&ref_data_re[i], 2, 1, fp);
 		fseek(fp, 2, SEEK_CUR);
-		fread(&ref_im_Array[i], 2, 1, f);
+		fread(&ref_data_im[i], 2, 1, fp);
 		fseek(fp, 2, SEEK_CUR);
 		
 	}
+
 
 	findMaximum(data_re, data_im, size);
 
@@ -103,15 +104,19 @@ int main() {
 	}
 
 
+
+
+
+
 	
-	/*i = 0;
+	i = 0;
 	for (i=0; i<10; i++)
 	{
-		printf("ref_re_Array %f\n", ref_re_Array[i]);
-		printf("ref_im_Array %f\n", ref_im_Array[i]);
+		printf("ref_data_im %f\n", ref_data_im[i]);
+		printf("ref_data_re %f\n", ref_data_re[i]);
 
 	}
-	fclose(f);*/
+	fclose(f);
 
 	/*for (int i=0; i<size; i++)
 	{
