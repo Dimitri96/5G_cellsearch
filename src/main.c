@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 
 short int max;
 
@@ -36,12 +37,12 @@ void findMaximum(short int arr1[], short int arr2[], int N)
 		}
     }
     // Print the maximum element
-    printf("maximum real element is %d", max_re);
+    /*printf("maximum real element is %d", max_re);
 	printf("\n");
 	printf("maximum imaginery element is %d", max_im);
 	printf("\n");
 	printf("maximum element is %d", max);
-	printf("\n");
+	printf("\n");*/
 }
 
 
@@ -94,9 +95,16 @@ int main() {
 		token = strtok(NULL, " + "); //split on " + "
 		token[strlen(token)-1] = '\0'; //remove the j 
 		im_Array_ref[current_position] = atof(token);
-		
-
+		current_position++;
 	}
+
+
+	/*for(int i=0; i<10; i++)
+	{
+		printf("refWaveform:");
+		printf("%f + %f", re_Array_ref[i], im_Array_ref[i]);
+		printf("\n");
+	}*/
 	
 
 	//go in steps of 2 bytes and split the data into real and imaginery numbers, each with a size of 2 bytes
@@ -118,9 +126,90 @@ int main() {
 		im_Array[i] = ((double)data_im[i])/max;
 	}
 
-//(ac -bd) + i(ad +bc) multiplying two complex numbers
+	/*for(int i=0; i<10; i++)
+	{
+		printf("Waveform:");
+		printf("%f + %f", re_Array[i], im_Array[i]);
+		printf("\n");
+	}*/
+	FILE *fp2;
+	fp2 = fopen("Data.txt", "w");
+	for(int i=0; i<size; i++)
+	{
+		fprintf(fp2, "%f + %fi", re_Array[i], im_Array[i]);
+		fprintf(fp2, "\n");
+	}
+	fclose(fp2);
 
 
+
+//correlation
+double re_Array_result[size];
+double im_Array_result[size];
+
+	for(int i=0; i<size; i++)
+	{
+		for(int j=0; j<count; j++)
+		{
+		re_Array_result[i] = (re_Array[i]*re_Array_ref[j]) - (im_Array[i]*im_Array_ref[j]);
+		im_Array_result[i] = (re_Array[i]*im_Array_ref[j]) + (im_Array[i]*re_Array_ref[j]);
+		}
+	}
+
+	//find out length of array re_Array_result
+	
+	/*
+	int length = sizeof(re_Array_result)/sizeof(re_Array_result[0]);
+	printf("length: %d", length);
+	printf("\n");
+
+	//find out and print 2049th position of the array re_Array im_Array
+	printf("2049 re im : %f + %fi", re_Array[2048], im_Array[2048]);
+	printf("\n");
+
+	//find out and print 1st position of the array ref
+	printf("1 ref : %f + %fi", re_Array_ref[0], im_Array_ref[0]);
+	printf("\n");
+
+	//find out and print the 2049 position of the array re_Array_result
+	printf("2049 result: %f + %fi", re_Array_result[2048], im_Array_result[2048]);
+	printf("\n");
+	*/
+
+
+	//print the result of the multiplication
+	for(int i=0; i<10; i++)
+	{
+		printf("result:");
+		printf("%f + %fi", re_Array_result[i], im_Array_result[i]);
+		printf("\n");
+	}
+
+	//write the results to a text file
+	FILE *fp1;
+	fp1 = fopen("result.txt", "w");
+	for(int i=0; i<size; i++)
+	{
+		fprintf(fp1, "%f + %fi", re_Array_result[i], im_Array_result[i]);
+		fprintf(fp1, "\n");
+	}
+	fclose(fp1);
+
+
+
+//benchmark how fast the computation is done
+	/*clock_t start, end;
+	float cpu_time_used;
+	start = clock();
+	//do something
+	end = clock();
+	cpu_time_used = ((float) (end - start)) / CLOCKS_PER_SEC;
+	printf("time used: %f", cpu_time_used);
+	printf("\n");*/
 
 	return 0;
+
+
+
 }
+
