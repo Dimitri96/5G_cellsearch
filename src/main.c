@@ -3,68 +3,83 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <complex.h> 
+#include <stdint.h>
 
-short int max;
 
-void findMaximum(short int arr1[], short int arr2[], int N)
-{
-    int i;
-    // variable to store the maximum element
-    short int max_im = arr1[0];
-	short int max_re = arr2[0];
-    // Traverse the given array
-    for (i = 0; i < N; i++)
-    {
-        // If current element is greater
-        // than max then update it
-        if (arr1[i] > max_re)
-        {
-            max_re = arr1[i];
-        }
-
-		if (arr2[i] > max_im)
-        {
-            max_im = arr2[i];
-        }
-
-		if (max_re > max_im) 
-		{
-    		max = max_re;
-		}
-		else 
-		{
-    		 max = max_im;
-		}
-    }
-    // Print the maximum element
-    /*printf("maximum real element is %d", max_re);
-	printf("\n");
-	printf("maximum imaginery element is %d", max_im);
-	printf("\n");
-	printf("maximum element is %d", max);
-	printf("\n");*/
+//function to read in data 4 bytes at a time 
+void read_data(FILE *f, int16_t *re, int16_t *im, int size) {
+	for (int i = 0; i < size; i++) {
+		int16_t temp = 0;
+		fread(&re[i], sizeof(temp), 1, f);
+		fread(&im[i], sizeof(temp), 1, f);
+	}
 }
 
-
 int main() {
-	// 1. first read in the file from the data folder
-	//1. define pointers to read in data
-	short int *data_im;
-	short int *data_re;
 
-	//short int **data_im_start = &data_im;
-	//short int **data_re_start = &data_re;
-	//2. allocate memory for the data to read in
-	FILE *f = fopen("data/30720KSPS_dl_signal.sigmf-data", "rb");
+	//open file 
+	FILE *f;
+	f = fopen("data/30720KSPS_dl_signal.sigmf-data", "rb");
+
+	//find length of file 
 	fseek(f, 0, SEEK_END);
 	long fsize = ftell(f);
-	fseek(f, 0, SEEK_SET);  /* same as rewind(f);*/
+	fseek(f, 0, SEEK_SET);
 
-	short int size = fsize / 4;
-	data_im = (short int*) malloc(size*sizeof(short int));
-	data_re = (short int*) malloc(size*sizeof(short int));
-	double re_Array[size];
-	double im_Array[size];
+	//define size of arrays
+	int size;
+	size = fsize / 8;
+
+	//define arrays to read in data (data_re, data_im)
+	int32_t *re = (int32_t *)malloc(size * sizeof(int32_t));
+	int32_t *im = (int32_t *)malloc(size * sizeof(int32_t));
+	int64_t *all = (int64_t *)malloc(size * sizeof(int64_t));
+	float *data_re = (float *)malloc(size * sizeof(float));
+	float *data_im = (float *)malloc(size * sizeof(float));
+
+	//read in data from file into arrays
+	for(int i = 0; i < size; i++) 
+	{	
+		uint64_t temp = 0;
+		fread((void*)(&temp), sizeof(temp), 1, f);
+		all[i] = temp;
+		re[i] = (int32_t)(temp & 0xFFFFFFFF);
+		im[i] = (int32_t)((temp >> sizeof(temp)/2) & 0xFFFFFFFF);
+	}
+
+	//scale the arrays (arrays / max value of arrays)
+	int32_t max = 0;
+	for (int i = 0; i < size; i++) {
+		if (re[i] > max) {
+			max = re[i];
+		}
+		if (im[i] > max) {
+			max = im[i];
+		}
+	}
+
+	for (int i = 0; i < size; i++) 
+	{
+		data_re[i] = (float)re[i] / max;
+		data_im[i] = (float)im[i] / max;
+	}
+
+	//print re an im arrays 
+	for (int i = 0; i < 10; i++) {
+		printf("%f %f\n", data_re[i], data_im[i]);
+	}
+
+
+	//multiply data_re and data_im by exponential complex function
+	/*double data_re_exp[size];
+	double data_im_exp[size];
+	for(int i = 0; i < size; i++) 
+	{
+		data_re_exp[i] = data_re[i] * cos(2 * M_PI * i / size) - data_im[i] * sin(2 * M_PI * i / size);
+		data_im_exp[i] = data_re[i] * sin(2 * M_PI * i / size) + data_im[i] * cos(2 * M_PI * i / size);
+	}*/
+
 
 	//get size of refWaveform
 	FILE *fp;
@@ -80,8 +95,8 @@ int main() {
     fclose(fp);
 	
 	//refWaveform Arrays
-	double re_Array_ref[count];
-	double im_Array_ref[count];
+	double re_data_ref[count];
+	double im_data_ref[count];
 	fp = fopen("refWaveform", "r");
 	char *line = NULL;
 	size_t len = 0;
@@ -91,113 +106,43 @@ int main() {
 	while((read = getline(&line, &len, fp)) !=-1)
 	{
 		token = strtok(line, " + "); //split on " + "
-		re_Array_ref[current_position] = atof(token); //atof reads in current token value into Array and parses as double
+		re_data_ref[current_position] = atof(token); //atof reads in current token value into Array and parses as double
 		token = strtok(NULL, " + "); //split on " + "
 		token[strlen(token)-1] = '\0'; //remove the j 
-		im_Array_ref[current_position] = atof(token);
+		im_data_ref[current_position] = atof(token);
 		current_position++;
 	}
+	fclose(fp);
 
-
-	/*for(int i=0; i<10; i++)
-	{
-		printf("refWaveform:");
-		printf("%f + %f", re_Array_ref[i], im_Array_ref[i]);
-		printf("\n");
-	}*/
-	
-
-	//go in steps of 2 bytes and split the data into real and imaginery numbers, each with a size of 2 bytes
-	int i;
-	for (i=0; i<size; i++)
-	{
-		fread(&data_re[i], 2, 1, f);
-		fseek(f, 2, SEEK_CUR);
-		fread(&data_im[i], 2, 1, f);
-		fseek(f, 2, SEEK_CUR);
-		
-	}
-
-	findMaximum(data_re, data_im, size);
-
-	for(int i=0; i<size; i++)
-	{
-		re_Array[i] = ((double)data_re[i])/max;
-		im_Array[i] = ((double)data_im[i])/max;
-	}
-
-	/*for(int i=0; i<10; i++)
-	{
-		printf("Waveform:");
-		printf("%f + %f", re_Array[i], im_Array[i]);
-		printf("\n");
-	}*/
-	FILE *fp2;
-	fp2 = fopen("Data.txt", "w");
-	for(int i=0; i<size; i++)
-	{
-		fprintf(fp2, "%f + %fi", re_Array[i], im_Array[i]);
-		fprintf(fp2, "\n");
-	}
-	fclose(fp2);
-
-
-
-//correlation
-double re_Array_result[size];
-double im_Array_result[size];
+/*
+	//correlation
+	double re_data_result[size];
+	double im_data_result[size];
 
 	for(int i=0; i<size; i++)
 	{
 		for(int j=0; j<count; j++)
 		{
-		re_Array_result[i] = (re_Array[i]*re_Array_ref[j]) - (im_Array[i]*im_Array_ref[j]);
-		im_Array_result[i] = (re_Array[i]*im_Array_ref[j]) + (im_Array[i]*re_Array_ref[j]);
+		re_data_result[i] = (data_re_exp[i]*re_data_ref[j]) - (data_im_exp[i]*im_data_ref[j]);
+		im_data_result[i] = (data_re_exp[i]*im_data_ref[j]) + (data_im_exp[i]*re_data_ref[j]);
 		}
 	}
 
-	//find out length of array re_Array_result
 	
-	/*
-	int length = sizeof(re_Array_result)/sizeof(re_Array_result[0]);
-	printf("length: %d", length);
-	printf("\n");
-
-	//find out and print 2049th position of the array re_Array im_Array
-	printf("2049 re im : %f + %fi", re_Array[2048], im_Array[2048]);
-	printf("\n");
-
-	//find out and print 1st position of the array ref
-	printf("1 ref : %f + %fi", re_Array_ref[0], im_Array_ref[0]);
-	printf("\n");
-
-	//find out and print the 2049 position of the array re_Array_result
-	printf("2049 result: %f + %fi", re_Array_result[2048], im_Array_result[2048]);
-	printf("\n");
-	*/
-
-
-	//print the result of the multiplication
-	for(int i=0; i<10; i++)
-	{
-		printf("result:");
-		printf("%f + %fi", re_Array_result[i], im_Array_result[i]);
-		printf("\n");
-	}
 
 	//write the results to a text file
 	FILE *fp1;
 	fp1 = fopen("result.txt", "w");
 	for(int i=0; i<size; i++)
 	{
-		fprintf(fp1, "%f + %fi", re_Array_result[i], im_Array_result[i]);
+		fprintf(fp1, "%f + %fi", re_data_result[i], im_data_result[i]);
 		fprintf(fp1, "\n");
 	}
 	fclose(fp1);
+*/
 
 
-
-//benchmark how fast the computation is done
+	//benchmark how fast the computation is done
 	/*clock_t start, end;
 	float cpu_time_used;
 	start = clock();
