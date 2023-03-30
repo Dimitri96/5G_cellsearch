@@ -45,7 +45,7 @@ int main() {
 		fread((void*)(&temp), sizeof(temp), 1, f);
 		all[i] = temp;
 		re[i] = (int32_t)(temp & 0xFFFFFFFF);
-		im[i] = (int32_t)((temp >> sizeof(temp)/2) & 0xFFFFFFFF);
+		im[i] = (int32_t)((temp >> sizeof(int32_t)) & 0xFFFFFFFF);
 	}
 
 	//scale the arrays (arrays / max value of arrays)
@@ -58,6 +58,8 @@ int main() {
 			max = im[i];
 		}
 	}
+
+	//printf("max is: %d\n", max);
 
 	for (int i = 0; i < size; i++) 
 	{
