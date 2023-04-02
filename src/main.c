@@ -7,15 +7,6 @@
 #include <stdint.h>
 
 
-//function to read in data 4 bytes at a time 
-void read_data(FILE *f, int16_t *re, int16_t *im, int size) {
-	for (int i = 0; i < size; i++) {
-		int16_t temp = 0;
-		fread(&re[i], sizeof(temp), 1, f);
-		fread(&im[i], sizeof(temp), 1, f);
-	}
-}
-
 int main() {
 
 	//open file 
@@ -34,22 +25,23 @@ int main() {
 	//define arrays to read in data (data_re, data_im)
 	int32_t *re = (int32_t *)malloc(size * sizeof(int32_t));
 	int32_t *im = (int32_t *)malloc(size * sizeof(int32_t));
-	int64_t *all = (int64_t *)malloc(size * sizeof(int64_t));
 	float *data_re = (float *)malloc(size * sizeof(float));
 	float *data_im = (float *)malloc(size * sizeof(float));
+	uint64_t temp = 0;
 
 	//read in data from file into arrays
 	for(int i = 0; i < size; i++) 
 	{	
-		uint64_t temp = 0;
 		fread((void*)(&temp), sizeof(temp), 1, f);
-		all[i] = temp;
 		re[i] = (int32_t)(temp & 0xFFFFFFFF);
-		im[i] = (int32_t)((temp >> sizeof(int32_t)) & 0xFFFFFFFF);
+		im[i] = (int32_t)((temp >> 32));
+		/*if (i == 0){
+			printf("temp=%lx re=%d im=%d\n", temp, re[0], im[0]);
+		}*/		
 	}
 
-	//scale the arrays (arrays / max value of arrays)
-	int32_t max = 0;
+	//find biggest value in re and im 
+	int max = 0;
 	for (int i = 0; i < size; i++) {
 		if (re[i] > max) {
 			max = re[i];
@@ -59,30 +51,53 @@ int main() {
 		}
 	}
 
-	//printf("max is: %d\n", max);
-
 	for (int i = 0; i < size; i++) 
 	{
 		data_re[i] = (float)re[i] / max;
 		data_im[i] = (float)im[i] / max;
 	}
+	free(re);
+	free(im);
+	fclose(f);
+	
 
-	//print re an im arrays 
-	for (int i = 0; i < 10; i++) {
-		printf("%f %f\n", data_re[i], data_im[i]);
-	}
-
-
-	//multiply data_re and data_im by exponential complex function
-	/*double data_re_exp[size];
-	double data_im_exp[size];
-	for(int i = 0; i < size; i++) 
+	//NOISE
+	//read in noise data and print error if file cant be opened
+	FILE *f1;
+	f1 = fopen("noise", "r");
+	int sze = 0; // Line counter (result)
+    char b; // To store a character read from file
+	for (b = getc(f1); b != EOF; b = getc(f1))
 	{
-		data_re_exp[i] = data_re[i] * cos(2 * M_PI * i / size) - data_im[i] * sin(2 * M_PI * i / size);
-		data_im_exp[i] = data_re[i] * sin(2 * M_PI * i / size) + data_im[i] * cos(2 * M_PI * i / size);
-	}*/
+        if (b == '\n') // Increment count if this character is newline
+            sze = sze + 1;
+	}
+	//set file pointer to the beginning
+    fseek(f1, 0, SEEK_SET);
+	
+
+	//define arrays and read in the data 
+	float *noise_re = (float *)malloc(sze * sizeof(float));
+	float *noise_im = (float *)malloc(sze * sizeof(float));
+	char *line1 = NULL;
+	size_t len1 = 0;
+	ssize_t read1;
+	int current_position1 = 0;
+	char *token1;
+	while((read1 = getline(&line1, &len1, f1)) !=-1)
+	{
+		token1 = strtok(line1, " + "); //split on " + "
+		noise_re[current_position1] = atof(token1); //atof reads in current token value into Array and parses as double
+		token1 = strtok(NULL, " + "); //split on " + "
+		token1[strlen(token1)-1] = '\0'; //remove the j 
+		noise_im[current_position1] = atof(token1);
+		current_position1++;
+	}
+	fclose(f1);
 
 
+	//REFWAVEFORM
+	
 	//get size of refWaveform
 	FILE *fp;
     int count = 0; // Line counter (result)
@@ -93,13 +108,12 @@ int main() {
         if (c == '\n') // Increment count if this character is newline
             count = count + 1;
 	}
-    // Close the file
-    fclose(fp);
+    //set file pointer to the beginning
+	fseek(fp, 0, SEEK_SET);
 	
 	//refWaveform Arrays
-	double re_data_ref[count];
-	double im_data_ref[count];
-	fp = fopen("refWaveform", "r");
+	float re_data_ref[count];
+	float im_data_ref[count];
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t read;
@@ -115,20 +129,26 @@ int main() {
 		current_position++;
 	}
 	fclose(fp);
+	printf("checkpoint 1\n");
+	//add data_re with noise_re and data_im with noise_im
+	for(int i=0; i<size; i++)
+	{
+		data_re[i] = data_re[i] + noise_re[i];
+		data_im[i] = data_im[i] + noise_im[i];
+	}
+	printf("checkpoint 2\n");
 
-/*
 	//correlation
-	double re_data_result[size];
-	double im_data_result[size];
+	float *re_data_result = (float *)malloc(size * sizeof(float));
+	float *im_data_result = (float *)malloc(size * sizeof(float));
 
 	for(int i=0; i<size; i++)
 	{
-		for(int j=0; j<count; j++)
-		{
-		re_data_result[i] = (data_re_exp[i]*re_data_ref[j]) - (data_im_exp[i]*im_data_ref[j]);
-		im_data_result[i] = (data_re_exp[i]*im_data_ref[j]) + (data_im_exp[i]*re_data_ref[j]);
-		}
+		re_data_result[i] = (data_re[i]*re_data_ref[i%count]) - (data_im[i]*im_data_ref[i%count]);
+		im_data_result[i] = (data_re[i]*im_data_ref[i%count]) + (data_im[i]*re_data_ref[i%count]);
+		
 	}
+	printf("checkpoint 3\n");
 
 	
 
@@ -137,11 +157,10 @@ int main() {
 	fp1 = fopen("result.txt", "w");
 	for(int i=0; i<size; i++)
 	{
-		fprintf(fp1, "%f + %fi", re_data_result[i], im_data_result[i]);
+		fprintf(fp1, "%f + %f", re_data_result[i], im_data_result[i]);
 		fprintf(fp1, "\n");
 	}
 	fclose(fp1);
-*/
 
 
 	//benchmark how fast the computation is done
