@@ -1,10 +1,22 @@
+import numpy as np
+import sigmf
+import scipy
 import matplotlib.pyplot as plt
-import numpy as np 
+from py3gpp import *
 
-#import result.txt as array of complex numbers
-data = np.loadtxt('result.txt', dtype=complex)
+# read in data
+data_re = np.loadtxt('result_re', dtype=float)
+data_im = np.loadtxt('result_im', dtype=float)
+result = data_re + 1j*data_im
+result = np.abs(result)
 
-#plot real and imaginary part of the complex numbers
-plt.plot(data.real, data.imag, 'o')
+fs = 30.72e6
+t_corr = np.arange(result.shape[0])/fs*1e3
+plt.plot(t_corr, np.abs(result))
 plt.show()
+
+
+
+
+
 
