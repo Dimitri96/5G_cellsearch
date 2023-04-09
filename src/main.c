@@ -7,7 +7,12 @@
 #include <stdint.h>
 
 
+
 int main() {
+
+	int delta_f = 0;
+	int f_s = 30720000;
+
 
 	//open file 
 	FILE *f;
@@ -59,9 +64,12 @@ int main() {
 	free(re);
 	free(im);
 	fclose(f);
-	
 
-	//NOISE
+	//print the 2049th value of data_re and data_im
+
+
+
+	/*//NOISE
 	//read in noise data and print error if file cant be opened
 	FILE *f1;
 	f1 = fopen("noise", "r");
@@ -93,7 +101,7 @@ int main() {
 		noise_im[current_position1] = atof(token1);
 		current_position1++;
 	}
-	fclose(f1);
+	fclose(f1);*/
 
 
 	//REFWAVEFORM
@@ -129,38 +137,96 @@ int main() {
 		current_position++;
 	}
 	fclose(fp);
-	printf("checkpoint 1\n");
-	//add data_re with noise_re and data_im with noise_im
+
+
+
+
+	//Multiply waveform with complex exponential function
+	/*complex x = exp(0);
 	for(int i=0; i<size; i++)
+	{
+
+		data_re[i] = (data_re[i]*creal(x)) - (data_im[i]*cimag(x));
+		data_im[i] = (data_re[i]*cimag(x)) + (data_im[i]*creal(x));
+	}*/
+
+	/*for(int i=0; i<10; i++)
+	{
+		printf("%f + %f\n", data_re[i], data_im[i]);
+	}*/
+
+
+
+	//add data_re with noise_re and data_im with noise_im
+	/*for(int i=0; i<size; i++)
 	{
 		data_re[i] = data_re[i] + noise_re[i];
 		data_im[i] = data_im[i] + noise_im[i];
-	}
-	printf("checkpoint 2\n");
+	}*/
 
 	//correlation
-	float *re_data_result = (float *)malloc(size * sizeof(float));
-	float *im_data_result = (float *)malloc(size * sizeof(float));
-
-	for(int i=0; i<size; i++)
+	for(int i = 0; i < size; i++)
 	{
-		re_data_result[i] = (data_re[i]*re_data_ref[i%count]) - (data_im[i]*im_data_ref[i%count]);
-		im_data_result[i] = (data_re[i]*im_data_ref[i%count]) + (data_im[i]*re_data_ref[i%count]);
-		
+		data_im[i] *= -1;
 	}
-	printf("checkpoint 3\n");
 
-	
+	for(int i = 0; i < count; i++)
+	{
+		im_data_ref[i] *= -1;
+	}
+
+	int sample_rate = 30720000;
+	int size_result = 0.025*sample_rate;
+	int k = 0;
+	float *re_data_result = (float *)malloc(size_result * sizeof(float));
+	float *im_data_result = (float *)malloc(size_result * sizeof(float));
+
+	//correlate data_re and data_im with re_data_ref and im_data_ref
+	for(int i=0; i<size_result; i++)
+	{
+		re_data_result[i] = 0;
+		im_data_result[i] = 0;
+		for(int j=0; j<count; j++)
+		{
+			re_data_result[i] += data_re[j+i]*re_data_ref[j] - data_im[j+i]*im_data_ref[j];
+			im_data_result[i] += data_re[j+i]*im_data_ref[j] + data_im[j+i]*re_data_ref[j];
+		}
+	}
+		/*while(k < size_result/count)
+	{
+		for(int i = 0; i < size_result; i+=count)
+		{	
+			for(int j=0; j<count; j++)
+			{
+
+				re_data_result[j+i] = (data_re[j+i]*re_data_ref[j]) - (data_im[j+i]*im_data_ref[j]);
+				im_data_result[j+i] = (data_re[j+i]*im_data_ref[j]) + (data_im[j+i]*re_data_ref[j]);
+			}
+		}
+		k++;
+	}*/
+
 
 	//write the results to a text file
 	FILE *fp1;
-	fp1 = fopen("result.txt", "w");
-	for(int i=0; i<size; i++)
+	fp1 = fopen("result_re", "w");
+	for(int i=0; i<size_result; i++)
 	{
-		fprintf(fp1, "%f + %f", re_data_result[i], im_data_result[i]);
+		fprintf(fp1, "%f", re_data_result[i]);
 		fprintf(fp1, "\n");
 	}
 	fclose(fp1);
+
+
+	FILE *fp2;
+	fp2 = fopen("result_im", "w");
+	for(int i=0; i<size_result; i++)
+	{
+		fprintf(fp2, "%f", im_data_result[i]);
+		fprintf(fp2, "\n");
+	}
+	fclose(fp2);
+	
 
 
 	//benchmark how fast the computation is done
@@ -178,4 +244,5 @@ int main() {
 
 
 }
+
 
