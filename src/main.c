@@ -9,6 +9,10 @@
 
 
 int main() {
+	//benchmark how fast the computation is done
+	clock_t start, end;
+	float cpu_time_used;
+	start = clock();
 
 	int delta_f = 0;
 	int f_s = 30720000;
@@ -229,15 +233,10 @@ int main() {
 	
 
 
-	//benchmark how fast the computation is done
-	/*clock_t start, end;
-	float cpu_time_used;
-	start = clock();
-	//do something
 	end = clock();
 	cpu_time_used = ((float) (end - start)) / CLOCKS_PER_SEC;
 	printf("time used: %f", cpu_time_used);
-	printf("\n");*/
+	printf("\n");
 
 	return 0;
 
