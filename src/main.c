@@ -166,6 +166,11 @@ int main() {
 			im_data_result_vec[i] = vmlaq_f32(im_data_result_vec[i], data_im_vec[j+i], re_data_ref_vec[j]);
 		}
 	}
+	/*for(int i=0; i<neon_result; i++)
+	{
+		vst1q_f32(re_data_result1+i*4, re_data_result_vec[i]);
+		vst1q_f32(im_data_result1+i*4, im_data_result_vec[i]);
+	}*/
 	end = clock();
 	cpu_time_used = ((float) (end - start)) / CLOCKS_PER_SEC;
 	printf("time used with neon: %f", cpu_time_used);
@@ -195,6 +200,25 @@ int main() {
 		fprintf(fp2, "\n");
 	}
 	fclose(fp2);
+
+	/*FILE *fp3;
+	fp3 = fopen("result_re1", "w");
+	for(int i=0; i<size_result; i++)
+	{
+		fprintf(fp3, "%f", re_data_result1[i]);
+		fprintf(fp3, "\n");
+	}
+	fclose(fp3);
+
+
+	FILE *fp4;
+	fp4 = fopen("result_im1", "w");
+	for(int i=0; i<size_result; i++)
+	{
+		fprintf(fp4, "%f", im_data_result1[i]);
+		fprintf(fp4, "\n");
+	}
+	fclose(fp4);*/
 
 	return 0;
 
