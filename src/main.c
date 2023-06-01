@@ -135,22 +135,36 @@ int main() {
 	start = clock();
 	int neon_result = size_result/4;
 	int neon_count = count/4;
-	float32x4_t *data_re_vec = (float32x4_t *)malloc(size * sizeof(float32x4_t));
-	float32x4_t *data_im_vec = (float32x4_t *)malloc(size * sizeof(float32x4_t));
-	float32x4_t *re_data_ref_vec = (float32x4_t *)malloc(count * sizeof(float32x4_t));
-	float32x4_t *im_data_ref_vec = (float32x4_t *)malloc(count * sizeof(float32x4_t));
-	float32x4_t *re_data_result_vec = (float32x4_t *)malloc(size_result * sizeof(float32x4_t));
-	float32x4_t *im_data_result_vec = (float32x4_t *)malloc(size_result * sizeof(float32x4_t));
-	for(int i=0; i<size; i++)
+	float *re_data_result1 = (float *)malloc(size_result * sizeof(float));
+	float *im_data_result1 = (float *)malloc(size_result * sizeof(float));
+	float32x4_t *data_re_vec = (float32x4_t *)malloc(neon_result * sizeof(float32x4_t));
+	float32x4_t *data_im_vec = (float32x4_t *)malloc(neon_result * sizeof(float32x4_t));
+	float32x4_t *re_data_ref_vec = (float32x4_t *)malloc(neon_count * sizeof(float32x4_t));
+	float32x4_t *im_data_ref_vec = (float32x4_t *)malloc(neon_count * sizeof(float32x4_t));
+	float32x4_t *re_data_result_vec = (float32x4_t *)malloc(neon_result * sizeof(float32x4_t));
+	float32x4_t *im_data_result_vec = (float32x4_t *)malloc(neon_result * sizeof(float32x4_t));
+	/*for(int i=0; i<size_result; i++)
 	{
-		data_re_vec[i] = vdupq_n_f32(data_re[i]);
-		data_im_vec[i] = vdupq_n_f32(data_im[i]);
+		data_re_vec[i] = vdupq_n_f32(data_re);
+		data_im_vec[i] = vdupq_n_f32(data_im);
 	}
 	for(int i=0; i<count; i++)
 	{
-		re_data_ref_vec[i] = vdupq_n_f32(re_data_ref[i]);
-		im_data_ref_vec[i] = vdupq_n_f32(im_data_ref[i]);
+		re_data_ref_vec[i] = vdupq_n_f32(re_data_ref);
+		im_data_ref_vec[i] = vdupq_n_f32(im_data_ref);
+	}*/
+	//load data into vectors
+	for(int i=0; i<neon_result; i++)
+	{
+		data_re_vec[i] = vld1q_f32(data_re+i*4);
+		data_im_vec[i] = vld1q_f32(data_im+i*4);
 	}
+	for(int i=0; i<neon_count; i++)
+	{
+		re_data_ref_vec[i] = vld1q_f32(re_data_ref+i*4);
+		im_data_ref_vec[i] = vld1q_f32(im_data_ref+i*4);
+	}
+	//initialize result vectors
 	for(int i=0; i<neon_result; i++)
 	{
 		re_data_result_vec[i] = vdupq_n_f32(0);
@@ -160,17 +174,19 @@ int main() {
 	{
 		for(int j=0; j<neon_count; j++)
 		{
+			//re_data_result_vec[i] =  vsubq_f32(vmulq_f32(data_re_vec[j+i], re_data_ref_vec[j]), vmulq_f32(data_im_vec[j+i], im_data_ref_vec[j]));
+			//im_data_result_vec[i] =  vaddq_f32(vmulq_f32(data_re_vec[j+i], re_data_ref_vec[j]), vmulq_f32(data_im_vec[j+i], im_data_ref_vec[j]));
 			re_data_result_vec[i] = vmlaq_f32(re_data_result_vec[i], data_re_vec[j+i], re_data_ref_vec[j]);
 			re_data_result_vec[i] = vmlsq_f32(re_data_result_vec[i], data_im_vec[j+i], im_data_ref_vec[j]);
 			im_data_result_vec[i] = vmlaq_f32(im_data_result_vec[i], data_re_vec[j+i], im_data_ref_vec[j]);
 			im_data_result_vec[i] = vmlaq_f32(im_data_result_vec[i], data_im_vec[j+i], re_data_ref_vec[j]);
 		}
 	}
-	/*for(int i=0; i<neon_result; i++)
+	for(int i=0; i<size_result; i++)
 	{
 		vst1q_f32(re_data_result1+i*4, re_data_result_vec[i]);
 		vst1q_f32(im_data_result1+i*4, im_data_result_vec[i]);
-	}*/
+	}
 	end = clock();
 	cpu_time_used = ((float) (end - start)) / CLOCKS_PER_SEC;
 	printf("time used with neon: %f", cpu_time_used);
@@ -201,7 +217,7 @@ int main() {
 	}
 	fclose(fp2);
 
-	/*FILE *fp3;
+	FILE *fp3;
 	fp3 = fopen("result_re1", "w");
 	for(int i=0; i<size_result; i++)
 	{
@@ -218,7 +234,7 @@ int main() {
 		fprintf(fp4, "%f", im_data_result1[i]);
 		fprintf(fp4, "\n");
 	}
-	fclose(fp4);*/
+	fclose(fp4);
 
 	return 0;
 
